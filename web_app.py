@@ -20,10 +20,11 @@ camera_lock = threading.Lock()
 is_camera_running = False
 
 # 設定參數
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
+CAMERA_WIDTH = 1280  # 提高解析度
+CAMERA_HEIGHT = 720
 CAMERA_ID = 0
 FPS = 30
+JPEG_QUALITY = 95  # 提高 JPEG 壓縮質量 (1-100)
 
 
 def initialize_camera():
@@ -128,8 +129,8 @@ def generate_frames():
         cv2.putText(frame, f"FPS: {int(fps)}", (CAMERA_WIDTH - 120, 30),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        # 編碼影像為 JPEG
-        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        # 編碼影像為 JPEG（使用高質量）
+        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
         if not ret:
             continue
         

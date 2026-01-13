@@ -115,7 +115,18 @@ class HandDetector:
         tip_ids = [4, 8, 12, 16, 20]  # 指尖的關鍵點 ID
         
         # 大拇指 (特殊處理，因為方向不同)
-        if landmark_list[tip_ids[0]][1] > landmark_list[tip_ids[0] - 1][1]:
+        # 使用大拇指指尖(4)和大拇指第二關節(3)的距離來判斷
+        thumb_tip_x = landmark_list[tip_ids[0]][1]
+        thumb_tip_y = landmark_list[tip_ids[0]][2]
+        thumb_joint_x = landmark_list[tip_ids[0] - 1][1]
+        thumb_joint_y = landmark_list[tip_ids[0] - 1][2]
+        
+        # 計算歐幾里得距離
+        import math
+        thumb_distance = math.sqrt((thumb_tip_x - thumb_joint_x)**2 + (thumb_tip_y - thumb_joint_y)**2)
+        
+        # 只有當距離足夠大時才認為大拇指伸直（閾值設為50像素）
+        if thumb_distance > 50:
             fingers.append(1)
         else:
             fingers.append(0)

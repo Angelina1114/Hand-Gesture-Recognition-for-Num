@@ -112,9 +112,13 @@ python3 web_app.py
 
 ```
 數字辨識/
-├── main.py                  # 主程式入口
+├── main.py                  # 桌面版主程式
+├── web_app.py               # 網頁版應用程式
 ├── hand_detector.py         # 手部檢測模組（基於 MediaPipe）
 ├── gesture_recognizer.py    # 手勢辨識模組
+├── templates/               # 網頁模板
+│   └── index.html          # 主頁面
+├── static/                  # 靜態資源
 ├── requirements.txt         # Python 依賴套件
 └── README.md               # 說明文檔
 ```
