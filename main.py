@@ -75,25 +75,32 @@ def main():
             
             # 如果手勢穩定，則顯示
             if stable_count >= stable_threshold and number != -1:
-                # 繪製結果
-                display_text = f"數字: {number} ({gesture_name})"
+                # 繪製結果（使用英文避免顯示問題）
+                if number == 6:
+                    # 讚手勢：顯示 "Like"
+                    display_text = "Like!"
+                    display_text_chinese = f"{gesture_name}"
+                else:
+                    # 數字手勢：顯示數字
+                    display_text = f"Number: {number}"
+                    display_text_chinese = f"數字: {number} ({gesture_name})"
                 
                 # 背景框
-                cv2.rectangle(img, (10, 10), (400, 80), (0, 128, 0), -1)
-                cv2.rectangle(img, (10, 10), (400, 80), (255, 255, 255), 2)
+                cv2.rectangle(img, (10, 10), (350, 80), (0, 128, 0), -1)
+                cv2.rectangle(img, (10, 10), (350, 80), (255, 255, 255), 2)
                 
-                # 顯示數字
+                # 顯示數字（英文）
                 cv2.putText(img, display_text, (20, 55), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3)
+                           cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
                 
-                # 在終端輸出
-                print(f"\r識別結果: {display_text}", end="", flush=True)
+                # 在終端輸出（中文）
+                print(f"\r識別結果: {display_text_chinese}", end="", flush=True)
         else:
             # 沒有檢測到手部
             stable_gesture = -1
             stable_count = 0
-            cv2.putText(img, "請將手放在攝像頭前", (20, 50),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            cv2.putText(img, "Place your hand in front of camera", (20, 50),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         
         # 計算並顯示 FPS
         current_time = time.time()
@@ -103,13 +110,13 @@ def main():
         cv2.putText(img, f"FPS: {int(fps)}", (camera_width - 120, 30),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        # 顯示說明信息
-        cv2.putText(img, "按 'q' 或 'ESC' 退出 | 按 'h' 幫助", 
+        # 顯示說明信息（英文）
+        cv2.putText(img, "Press 'q' or 'ESC' to quit | 'h' for help", 
                    (10, camera_height - 10),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
         # 顯示影像
-        cv2.imshow("手勢數字辨識系統", img)
+        cv2.imshow("Hand Gesture Recognition System", img)
         
         # 鍵盤輸入處理
         key = cv2.waitKey(1) & 0xFF
@@ -123,6 +130,7 @@ def main():
             print("=" * 50)
             for i in range(6):
                 print(f"{i}: {recognizer.get_gesture_description(i)}")
+            print(f"👍 讚: {recognizer.get_gesture_description(6)}")
             print("=" * 50 + "\n")
     
     # 清理資源

@@ -265,19 +265,22 @@
                             <strong>0</strong> 握拳（所有手指彎曲）
                         </li>
                         <li class="gesture-item">
-                            <strong>1</strong> 伸出食指或大拇指
+                            <strong>1</strong> 只伸出食指
                         </li>
                         <li class="gesture-item">
-                            <strong>2</strong> 伸出食指和中指（剪刀手）
+                            <strong>2</strong> 食指+中指
                         </li>
                         <li class="gesture-item">
-                            <strong>3</strong> 伸出三根手指
+                            <strong>3</strong> 食指+中指+無名指 或 中指+無名指+小指
                         </li>
                         <li class="gesture-item">
-                            <strong>4</strong> 伸出四根手指
+                            <strong>4</strong> 食指+中指+無名指+小指
                         </li>
                         <li class="gesture-item">
                             <strong>5</strong> 張開手掌（所有手指伸直）
+                        </li>
+                        <li class="gesture-item">
+                            <strong>👍 讚</strong> 只伸出大拇指
                         </li>
                     </ul>
                 </div>
@@ -302,7 +305,12 @@
                 const confidenceEl = document.getElementById('confidenceFill');
                 
                 if (data.number >= 0) {
-                    numberEl.textContent = data.number;
+                    // 如果是讚手勢（數字6），顯示👍而不是數字
+                    if (data.number === 6) {
+                        numberEl.textContent = '👍';
+                    } else {
+                        numberEl.textContent = data.number;
+                    }
                     nameEl.textContent = data.name;
                     nameEl.classList.remove('no-detection');
                     confidenceEl.style.width = data.confidence + '%';
