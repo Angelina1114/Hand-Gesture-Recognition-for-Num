@@ -99,9 +99,9 @@ def initialize_camera():
             return False
         
         # 步驟 3: 創建檢測器實例
-        # max_hands=1: 只檢測一隻手（提高性能）
+        # max_hands=2: 檢測兩隻手
         # detection_confidence=0.7: 檢測信心度閾值（0.0-1.0）
-        detector = HandDetector(max_hands=1, detection_confidence=0.7)
+        detector = HandDetector(max_hands=2, detection_confidence=0.7)
         recognizer = GestureRecognizer()
         
         # 步驟 4: 更新狀態標記
@@ -216,89 +216,124 @@ def generate_frames():
         # 如果沒有檢測到手部，landmark_list 將是空列表
         landmark_list = detector.find_position(frame)
         
-        # ===== 手勢辨識 =====
-        if len(landmark_list) != 0:
+        # ===== 雙手手勢辨識 =====
+        hand_count = detector.get_hand_count()
+        
+        if hand_count > 0:
             # 有檢測到手部
-            # 步驟 1: 判斷每根手指是否伸直
-            # 返回格式: [大拇指, 食指, 中指, 無名指, 小指]
-            # 例如: [0, 1, 1, 0, 0] 表示食指和中指伸直
-            fingers = detector.fingers_up(landmark_list)
+            hands_data = []
             
-            # 步驟 2: 根據手指狀態識別數字
-            # number: 0-5 的數字，-1 表示無法識別
-            # gesture_name: 中文名稱（"零", "一", "二"...）
-            number, gesture_name = recognizer.recognize_number(fingers)
+            # 遍歷所有檢測到的手
+            for hand_no in range(hand_count):
+                hand_landmarks = detector.find_position(frame, hand_no)
+                if len(hand_landmarks) != 0:
+                    # 判斷手指狀態
+                    fingers = detector.fingers_up(hand_landmarks)
+                    # 識別手勢
+                    number, gesture_name = recognizer.recognize_number(fingers)
+                    # 獲取手腕 X 座標（用於判斷左右）
+                    wrist_x = hand_landmarks[0][1]
+                    
+                    hands_data.append({
+                        'number': number,
+                        'name': gesture_name,
+                        'wrist_x': wrist_x
+                    })
+            
+            # 根據 X 座標排序（由左到右）
+            hands_data.sort(key=lambda h: h['wrist_x'])
+            
+            # 組合手勢結果
+            if len(hands_data) == 1:
+                # 只有一隻手
+                combined_number = hands_data[0]['number']
+                combined_name = hands_data[0]['name']
+                
+            elif len(hands_data) == 2:
+                # 兩隻手
+                left_hand = hands_data[0]
+                right_hand = hands_data[1]
+                
+                # 判斷是否都是數字手勢（0-9）
+                if (0 <= left_hand['number'] <= 9 and 
+                    0 <= right_hand['number'] <= 9):
+                    # 組成兩位數：左手是十位數，右手是個位數
+                    combined_number = left_hand['number'] * 10 + right_hand['number']
+                    combined_name = str(combined_number)
+                else:
+                    # 有特殊手勢，用 + 連接
+                    combined_number = -2  # 特殊標記表示組合手勢
+                    combined_name = f"{left_hand['name']}+{right_hand['name']}"
+            
+            else:
+                combined_number = -1
+                combined_name = "Unknown"
             
             # ===== 穩定性過濾機制 =====
-            # 只有當相同手勢連續檢測到多次，才認定為有效
-            
-            if number == stable_gesture:
-                # 檢測到的手勢與上一幀相同，計數器加 1
+            if combined_name == stable_gesture:
                 stable_count += 1
             else:
-                # 檢測到的手勢變了，重置計數器
-                stable_gesture = number
+                stable_gesture = combined_name
                 stable_count = 1
             
             # 檢查手勢是否已經穩定
-            if stable_count >= stable_threshold and number != -1:
+            if stable_count >= stable_threshold and combined_number != -1:
                 # 手勢已穩定，可以顯示結果
-                # 更新全域變數（供前端 API 查詢）
                 current_gesture = {
-                    "number": number,
-                    "name": gesture_name,
-                    # 信心度計算：超過閾值後，每多檢測一幀增加一些信心度
+                    "number": combined_number,
+                    "name": combined_name,
                     "confidence": min(100, int(stable_count / stable_threshold * 100))
                 }
                 
-                # 準備要顯示的文字（使用英文避免顯示問題）
-                if number >= 10:
-                    # 特殊手勢：直接顯示名稱
-                    display_text = gesture_name
+                # 準備要顯示的文字
+                if combined_number == -2:
+                    # 組合手勢
+                    display_text = combined_name
+                elif combined_number >= 10 and combined_number <= 99:
+                    # 兩位數
+                    display_text = f"Number: {combined_number}"
+                elif combined_number > 99:
+                    # 特殊手勢
+                    display_text = combined_name
                 else:
-                    # 數字手勢：顯示數字
-                    display_text = f"Number: {number}"
+                    # 單位數
+                    display_text = f"Number: {combined_number}"
                 
                 # ===== 在影像上繪製結果 =====
+                box_width = max(350, len(display_text) * 15 + 50)
                 
-                # 繪製綠色背景框（填滿）
-                cv2.rectangle(frame, (10, 10), (350, 80), (0, 128, 0), -1)
+                # 繪製綠色背景框
+                cv2.rectangle(frame, (10, 10), (box_width, 80), (0, 128, 0), -1)
+                cv2.rectangle(frame, (10, 10), (box_width, 80), (255, 255, 255), 2)
                 
-                # 繪製白色邊框
-                cv2.rectangle(frame, (10, 10), (350, 80), (255, 255, 255), 2)
-                
-                # 繪製文字（白色、粗體）
+                # 繪製文字
                 cv2.putText(
-                    frame,                          # 目標影像
-                    display_text,                   # 要顯示的文字（英文）
-                    (20, 55),                       # 文字位置（左下角座標）
-                    cv2.FONT_HERSHEY_SIMPLEX,       # 字體
-                    1.5,                            # 字體大小
-                    (255, 255, 255),                # 顏色（白色，BGR 格式）
-                    3                               # 線條粗細
+                    frame,
+                    display_text,
+                    (20, 55),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.5,
+                    (255, 255, 255),
+                    3
                 )
             else:
-                # 手勢尚未穩定，顯示"偵測中"
-                current_gesture = {"number": -1, "name": "偵測中...", "confidence": 0}
+                # 手勢尚未穩定
+                current_gesture = {"number": -1, "name": "Detecting...", "confidence": 0}
                 
         else:
             # 沒有檢測到手部
-            
-            # 重置穩定性計數器
             stable_gesture = -1
             stable_count = 0
+            current_gesture = {"number": -1, "name": "No Hand Detected", "confidence": 0}
             
-            # 更新狀態為"未偵測到手部"
-            current_gesture = {"number": -1, "name": "未偵測到手部", "confidence": 0}
-            
-            # 在影像上顯示提示文字（紅色，使用英文）
+            # 顯示提示文字
             cv2.putText(
                 frame,
-                "Place your hand in front of camera",
+                "Place your hands in front of camera",
                 (20, 50),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.7,
-                (0, 0, 255),                    # 紅色（BGR 格式）
+                (0, 0, 255),
                 2
             )
         

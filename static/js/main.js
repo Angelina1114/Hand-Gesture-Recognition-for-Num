@@ -130,18 +130,63 @@ function updateGestureDisplay(data) {
     const { number, name } = data;
     
     // Update number/icon display
-    if (number >= 10) {
-        // Special gesture - show emoji
+    if (number === -2) {
+        // Combined gestures (e.g., "Like+OK")
+        // Parse and display combined emojis or text
+        elements.numberDisplay.textContent = parseGestureName(name);
+        elements.numberDisplay.style.fontSize = '3em';  // Smaller for combined
+    } else if (number >= 10 && number <= 99) {
+        // Two-digit number
+        elements.numberDisplay.textContent = number;
+        elements.numberDisplay.style.fontSize = '5em';
+    } else if (number > 99) {
+        // Single special gesture - show emoji
         const emoji = CONFIG.specialGestures[number] || '?';
         elements.numberDisplay.textContent = emoji;
+        elements.numberDisplay.style.fontSize = '5em';
     } else {
-        // Number gesture - show number
+        // Single digit number
         elements.numberDisplay.textContent = number;
+        elements.numberDisplay.style.fontSize = '5em';
     }
     
     // Update name display
     elements.nameDisplay.textContent = name;
     elements.nameDisplay.classList.remove('no-detection');
+}
+
+/**
+ * Parse gesture name to display format
+ * @param {string} name - Gesture name (e.g., "Like+OK")
+ * @returns {string} Display text with emojis
+ */
+function parseGestureName(name) {
+    if (!name || !name.includes('+')) {
+        return name;
+    }
+    
+    // Split by + and convert each part to emoji if possible
+    const parts = name.split('+');
+    let result = '';
+    
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].trim();
+        
+        // Try to find emoji for special gestures
+        let display = part;
+        if (part === 'Like') display = '👍';
+        else if (part === 'OK') display = '👌';
+        else if (part === 'ROCK') display = '🤘';
+        else if (part === 'FUCK') display = '🖕';
+        else if (!isNaN(part)) display = part;  // Keep numbers as is
+        
+        result += display;
+        if (i < parts.length - 1) {
+            result += '+';
+        }
+    }
+    
+    return result;
 }
 
 /**

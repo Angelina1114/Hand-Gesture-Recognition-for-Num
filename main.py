@@ -30,8 +30,8 @@ def main():
     
     print(f"攝像頭初始化成功！解析度: {camera_width}x{camera_height}")
     
-    # 初始化手部檢測器和手勢辨識器
-    detector = HandDetector(max_hands=1, detection_confidence=0.7)
+    # 初始化手部檢測器和手勢辨識器（雙手模式）
+    detector = HandDetector(max_hands=2, detection_confidence=0.7)
     recognizer = GestureRecognizer()
     
     # FPS 計算
@@ -59,47 +59,87 @@ def main():
         
         # 檢測手部
         img = detector.find_hands(img, draw=True)
-        landmark_list = detector.find_position(img)
+        hand_count = detector.get_hand_count()
         
-        # 辨識手勢
-        if len(landmark_list) != 0:
-            fingers = detector.fingers_up(landmark_list)
-            number, gesture_name = recognizer.recognize_number(fingers)
+        # 雙手辨識手勢
+        if hand_count > 0:
+            hands_data = []
+            
+            # 遍歷所有檢測到的手
+            for hand_no in range(hand_count):
+                hand_landmarks = detector.find_position(img, hand_no)
+                if len(hand_landmarks) != 0:
+                    fingers = detector.fingers_up(hand_landmarks)
+                    number, gesture_name = recognizer.recognize_number(fingers)
+                    wrist_x = hand_landmarks[0][1]
+                    
+                    hands_data.append({
+                        'number': number,
+                        'name': gesture_name,
+                        'wrist_x': wrist_x
+                    })
+            
+            # 根據 X 座標排序（由左到右）
+            hands_data.sort(key=lambda h: h['wrist_x'])
+            
+            # 組合手勢結果
+            if len(hands_data) == 1:
+                combined_number = hands_data[0]['number']
+                combined_name = hands_data[0]['name']
+            elif len(hands_data) == 2:
+                left_hand = hands_data[0]
+                right_hand = hands_data[1]
+                
+                if (0 <= left_hand['number'] <= 9 and 
+                    0 <= right_hand['number'] <= 9):
+                    # 組成兩位數
+                    combined_number = left_hand['number'] * 10 + right_hand['number']
+                    combined_name = str(combined_number)
+                else:
+                    # 組合手勢
+                    combined_number = -2
+                    combined_name = f"{left_hand['name']}+{right_hand['name']}"
+            else:
+                combined_number = -1
+                combined_name = "Unknown"
             
             # 穩定性檢測
-            if number == stable_gesture:
+            if combined_name == stable_gesture:
                 stable_count += 1
             else:
-                stable_gesture = number
+                stable_gesture = combined_name
                 stable_count = 1
             
             # 如果手勢穩定，則顯示
-            if stable_count >= stable_threshold and number != -1:
-                # 繪製結果（使用英文避免顯示問題）
-                if number >= 10:
-                    # 特殊手勢：直接顯示名稱
-                    display_text = gesture_name
-                    display_text_chinese = gesture_name
+            if stable_count >= stable_threshold and combined_number != -1:
+                # 準備顯示文字
+                if combined_number == -2:
+                    display_text = combined_name
+                elif 10 <= combined_number <= 99:
+                    display_text = f"Number: {combined_number}"
+                elif combined_number > 99:
+                    display_text = combined_name
                 else:
-                    # 數字手勢：顯示數字
-                    display_text = f"Number: {number}"
-                    display_text_chinese = f"數字: {number}"
+                    display_text = f"Number: {combined_number}"
+                
+                # 動態調整背景框寬度
+                box_width = max(350, len(display_text) * 15 + 50)
                 
                 # 背景框
-                cv2.rectangle(img, (10, 10), (350, 80), (0, 128, 0), -1)
-                cv2.rectangle(img, (10, 10), (350, 80), (255, 255, 255), 2)
+                cv2.rectangle(img, (10, 10), (box_width, 80), (0, 128, 0), -1)
+                cv2.rectangle(img, (10, 10), (box_width, 80), (255, 255, 255), 2)
                 
-                # 顯示數字（英文）
+                # 顯示文字
                 cv2.putText(img, display_text, (20, 55), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
                 
-                # 在終端輸出（中文）
-                print(f"\r識別結果: {display_text_chinese}", end="", flush=True)
+                # 在終端輸出
+                print(f"\r識別結果: {display_text}", end="", flush=True)
         else:
             # 沒有檢測到手部
             stable_gesture = -1
             stable_count = 0
-            cv2.putText(img, "Place your hand in front of camera", (20, 50),
+            cv2.putText(img, "Place your hands in front of camera", (20, 50),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         
         # 計算並顯示 FPS

@@ -162,6 +162,17 @@ class HandDetector:
                     
         return landmark_list
     
+    def get_hand_count(self):
+        """
+        獲取檢測到的手部數量
+        
+        返回:
+            count (int): 手部數量 (0, 1, 或 2)
+        """
+        if self.results.multi_hand_landmarks:
+            return len(self.results.multi_hand_landmarks)
+        return 0
+    
     def vector_2d_angle(self, v1, v2):
         """
         計算兩個二維向量之間的夾角
