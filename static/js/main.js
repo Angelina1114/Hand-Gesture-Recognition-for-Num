@@ -112,7 +112,8 @@ function updateUI(data) {
         return;
     }
     
-    if (data.number >= 0) {
+    // data.number === -2 代表「組合特殊手勢」（例如 Like+OK），也要視為有效
+    if (data.number >= 0 || data.number === -2) {
         // Valid gesture detected
         updateGestureDisplay(data);
         showConfidence(data.confidence);
@@ -181,6 +182,7 @@ function parseGestureName(name) {
         else if (!isNaN(part)) display = part;  // Keep numbers as is
         
         result += display;
+        // 不想在中間顯示 '+'，如果想保留可以改成 ' + '
         if (i < parts.length - 1) {
             result += '+';
         }
