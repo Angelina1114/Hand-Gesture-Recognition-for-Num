@@ -1,26 +1,54 @@
 """
-手勢數字辨識 Web 應用程式
-使用 Flask 框架提供網頁介面，可在瀏覽器中查看實時手勢辨識結果
+手勢數字辨識 Web 應用程式（後端主模組）
+==================================================
 
-主要功能：
-1. 透過 HTTP 提供網頁服務（支援遠端訪問）
-2. 實時視訊串流（MJPEG 格式）
-3. 手勢辨識數據 API（JSON 格式）
-4. 響應式網頁界面
+這個檔案是整個「雙手手勢數字辨識系統」的後端入口，負責：
 
-技術架構：
-- 後端：Flask (Python 網頁框架)
-- 視訊處理：OpenCV
-- 手部檢測：MediaPipe
-- 串流協議：MJPEG (Motion JPEG)
-- 前端：HTML5 + CSS3 + JavaScript
+1. 啟動 Flask Web 伺服器，提供瀏覽器可連線的 HTTP 服務
+2. 使用 OpenCV 讀取攝像頭影像並透過 MJPEG 形式串流到前端
+3. 呼叫 `HandDetector` 進行手部關鍵點偵測與手指狀態判斷
+4. 呼叫 `GestureRecognizer` 將手指狀態轉成數字或特殊手勢
+5. 實作「雙手模式」：
+   - 同一畫面中最多兩隻手
+   - 依照「由左到右」決定十位數與個位數
+   - 兩隻手都是數字手勢 → 組成兩位數（例如左手2、右手3 → 23）
+   - 若任一隻手為特殊手勢 → 使用「名稱 + 名稱」的方式表示（例如 Like+OK）
+6. 提供多個 API 端點給前端使用：
+   - `/video_feed`：回傳 MJPEG 影片串流（<img> 可以直接引用）
+   - `/gesture_data`：回傳目前穩定辨識到的手勢結果（JSON）
+   - `/gesture_help`：回傳所有支援手勢的說明文字（JSON）
+   - `/camera_control`：接受「start / stop」指令以開啟或關閉攝像頭
 
-工作流程：
-1. Flask 啟動 HTTP 伺服器（端口 5000）
-2. 攝像頭持續捕捉影像
-3. MediaPipe 檢測手部並識別手勢
-4. 影像編碼為 JPEG 並串流到瀏覽器
-5. JavaScript 定期獲取最新的手勢數據並更新界面
+主要資料流說明：
+------------------
+1. 前端透過 `<img src="/video_feed">` 取得即時影像
+2. Flask 內的 `generate_frames()`：
+   - 從攝像頭讀取每一幀影像
+   - 交給 `HandDetector` 找出手部位置與 21 個關鍵點
+   - 取得每隻手的「手指是否伸直」陣列，例如 [0,1,1,0,0]
+   - 交給 `GestureRecognizer` 轉成手勢（0-9 或 Like / OK / ROCK / FUCK）
+   - 若同時偵測到兩隻手，依據 X 座標由左到右排序，組合成兩位數或「手勢+手勢」
+   - 套用穩定性過濾（同一結果需連續出現 N 幀才算有效）
+   - 將結果寫入 `current_gesture` 全域變數
+3. 前端每隔一段時間呼叫 `/gesture_data`：
+   - 取得 `current_gesture`（number / name / confidence）
+   - 在右側 UI 顯示對應數字或表情符號
+
+關於 `current_gesture` 結構：
+-----------------------------
+    current_gesture = {
+        "number": int,
+        "name": str,
+        "confidence": int  # 0-100
+    }
+
+- 單手數字手勢：number = 0~9,      name = "0" ~ "9"
+- 雙手數字手勢：number = 10~99,    name = "10" 等
+- 單一特殊手勢：number = 10~13,    name = "Like" / "OK" / ...
+- 組合特殊手勢：number = -2,       name = "Like+OK" 等（左手在前，右手在後）
+- 無有效手勢：  number = -1,       name = "No Hand Detected" / "Detecting..." 等提示字串
+
+前端 `static/js/main.js` 會依照上述規則解讀並顯示對應內容。
 """
 import cv2
 import time
