@@ -1,0 +1,451 @@
+/* ==========================================
+   Hand Gesture Recognition System - Styles
+   Modern Dark Theme with Minimalist Design
+   ========================================== */
+
+/* ===== CSS Variables ===== */
+:root {
+    --primary-dark: #1a1a1a;
+    --secondary-dark: #2d2d2d;
+    --accent-light: #f5f5f5;
+    --accent-gray: #8a8a8a;
+    --border-gray: #404040;
+    --success-green: #4ade80;
+    --warning-red: #ef4444;
+    --gradient-dark: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+    --gradient-accent: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+    --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--gradient-dark);
+    min-height: 100vh;
+    color: var(--accent-light);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* ===== Container ===== */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ===== Header ===== */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-gray);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+}
+
+header h1 {
+    font-size: 2.5em;
+    font-weight: 300;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: var(--accent-light);
+}
+
+header p {
+    font-size: 0.9em;
+    color: var(--accent-gray);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+}
+
+.status-active {
+    background: var(--success-green);
+    box-shadow: 0 0 10px var(--success-green);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== Main Content Grid ===== */
+.main-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Card Base Style ===== */
+.card {
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-gray);
+    border-radius: 2px;
+    padding: 30px;
+    box-shadow: var(--box-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-gray), transparent);
+}
+
+.card h2 {
+    color: var(--accent-light);
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-gray);
+    padding-bottom: 10px;
+}
+
+/* ===== Video Section ===== */
+.video-section {
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border: 1px solid var(--border-gray);
+    border-radius: 2px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+#videoStream {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* ===== Camera Toggle Button ===== */
+.camera-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-gray);
+    color: var(--accent-light);
+    font-size: 0.85em;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    text-transform: uppercase;
+}
+
+.camera-toggle-btn:hover {
+    background: var(--accent-light);
+    color: var(--primary-dark);
+    border-color: var(--accent-light);
+}
+
+.camera-toggle-btn.camera-off {
+    background: var(--warning-red);
+    border-color: var(--warning-red);
+}
+
+.camera-toggle-btn.camera-off:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: var(--accent-light);
+}
+
+.btn-icon {
+    font-size: 1.2em;
+    display: inline-block;
+    animation: pulse-icon 2s infinite;
+}
+
+.camera-toggle-btn.camera-off .btn-icon {
+    animation: none;
+}
+
+@keyframes pulse-icon {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== Camera Off Overlay ===== */
+.camera-off-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--secondary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.camera-off-content {
+    text-align: center;
+}
+
+.camera-off-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.camera-off-text {
+    font-size: 1.5em;
+    letter-spacing: 4px;
+    color: var(--accent-gray);
+    font-weight: 300;
+}
+
+/* ===== Info Section ===== */
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* ===== Result Card ===== */
+.result-card {
+    text-align: center;
+}
+
+.gesture-display {
+    background: var(--gradient-accent);
+    border: 1px solid var(--border-gray);
+    padding: 40px 20px;
+    border-radius: 2px;
+    margin: 20px 0;
+    position: relative;
+}
+
+.gesture-display::before,
+.gesture-display::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--accent-light);
+}
+
+.gesture-display::before {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.gesture-display::after {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+}
+
+.gesture-number {
+    font-size: 5em;
+    font-weight: 300;
+    margin: 10px 0;
+    color: var(--accent-light);
+    letter-spacing: 5px;
+}
+
+.gesture-name {
+    font-size: 1.8em;
+    font-weight: 300;
+    margin: 10px 0;
+    color: var(--accent-gray);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.confidence-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: var(--success-green);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px var(--success-green);
+}
+
+/* ===== Help Card ===== */
+.help-card {
+}
+
+.help-content {
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.help-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.help-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.help-content::-webkit-scrollbar-thumb {
+    background: var(--accent-gray);
+    border-radius: 2px;
+}
+
+.help-section-title {
+    color: var(--accent-light);
+    margin: 20px 0 10px 0;
+    font-size: 1em;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-left: 3px solid var(--accent-light);
+    padding-left: 10px;
+}
+
+.gesture-list {
+    list-style: none;
+    margin-bottom: 20px;
+}
+
+.gesture-item {
+    padding: 12px 15px;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 2px solid var(--border-gray);
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+    color: var(--accent-gray);
+}
+
+.gesture-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--accent-light);
+    transform: translateX(5px);
+}
+
+.gesture-item strong {
+    color: var(--accent-light);
+    font-weight: 400;
+    margin-right: 15px;
+    letter-spacing: 1px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 30px;
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-gray);
+    border-radius: 2px;
+    position: relative;
+}
+
+.footer::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-gray), transparent);
+}
+
+.footer p {
+    font-size: 0.9em;
+    color: var(--accent-gray);
+    letter-spacing: 1px;
+}
+
+.footer p:first-child {
+    margin-bottom: 10px;
+    color: var(--accent-light);
+}
+
+/* ===== Utility Classes ===== */
+.no-detection {
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--accent-light);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8em;
+        letter-spacing: 4px;
+    }
+    
+    .gesture-number {
+        font-size: 3.5em;
+    }
+    
+    .gesture-name {
+        font-size: 1.3em;
+    }
+}
+

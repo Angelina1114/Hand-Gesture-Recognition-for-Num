@@ -24,7 +24,8 @@
 """
 import cv2
 import time
-from flask import Flask, render_template, Response, jsonify
+import numpy as np
+from flask import Flask, render_template, Response, jsonify, request
 from hand_detector import HandDetector
 from gesture_recognizer import GestureRecognizer
 import threading
@@ -51,6 +52,9 @@ camera_lock = threading.Lock()
 
 # 攝像頭運行狀態標記
 is_camera_running = False
+
+# 攝像頭啟用狀態（用戶控制）
+is_camera_enabled = True
 
 # ===== 系統配置參數 =====
 CAMERA_WIDTH = 1280       # 攝像頭寬度（像素），提高解析度以改善畫質
@@ -134,7 +138,7 @@ def generate_frames():
     Yields:
         bytes: MJPEG 格式的影像幀數據
     """
-    global current_gesture
+    global current_gesture, is_camera_enabled
     
     # 確保攝像頭已初始化
     if not is_camera_running:
@@ -151,6 +155,34 @@ def generate_frames():
     
     # ===== 主循環：持續處理影像 =====
     while True:
+        # 檢查攝像頭是否被用戶啟用
+        if not is_camera_enabled:
+            # 攝像頭已關閉，生成黑色畫面
+            frame = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+            
+            # 在黑色畫面上顯示文字
+            cv2.putText(
+                frame,
+                "CAMERA OFF",
+                (CAMERA_WIDTH // 2 - 150, CAMERA_HEIGHT // 2),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.5,
+                (128, 128, 128),
+                2
+            )
+            
+            # 編碼並返回
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
+            if ret:
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' +
+                       frame_bytes + b'\r\n')
+            
+            # 暫停一下再繼續
+            time.sleep(0.1)
+            continue
+        
         # 使用執行緒鎖保護攝像頭讀取操作
         # 這樣可以避免多個執行緒同時訪問攝像頭導致的衝突
         with camera_lock:
@@ -403,6 +435,75 @@ def gesture_help():
             "description": recognizer.get_gesture_description(gesture_id)
         })
     return jsonify(help_data)
+
+
+@app.route('/camera_control', methods=['POST'])
+def camera_control():
+    """
+    攝像頭控制 API 路由
+    
+    URL: http://IP地址:5000/camera_control
+    Method: POST
+    
+    接收控制指令，啟動或停止攝像頭
+    
+    請求格式:
+        {
+            "action": "start" 或 "stop"
+        }
+    
+    返回格式:
+        {
+            "status": "success" 或 "error",
+            "message": "說明信息",
+            "camera_enabled": true/false
+        }
+    """
+    global is_camera_enabled
+    
+    try:
+        # 獲取請求數據
+        data = request.get_json()
+        action = data.get('action', '')
+        
+        if action == 'start':
+            # 啟動攝像頭
+            is_camera_enabled = True
+            return jsonify({
+                "status": "success",
+                "message": "Camera started",
+                "camera_enabled": True
+            })
+        
+        elif action == 'stop':
+            # 停止攝像頭
+            is_camera_enabled = False
+            # 清除當前手勢狀態
+            global current_gesture
+            current_gesture = {
+                "number": -1,
+                "name": "Camera Off",
+                "confidence": 0
+            }
+            return jsonify({
+                "status": "success",
+                "message": "Camera stopped",
+                "camera_enabled": False
+            })
+        
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid action. Use 'start' or 'stop'.",
+                "camera_enabled": is_camera_enabled
+            }), 400
+    
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "camera_enabled": is_camera_enabled
+        }), 500
 
 
 def cleanup():

@@ -1,342 +1,131 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>手勢數字辨識系統</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .video-section {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .video-container {
-            position: relative;
-            width: 100%;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            aspect-ratio: 4/3;
-        }
-
-        #videoStream {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .info-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .result-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-
-        .result-card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .gesture-display {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin: 15px 0;
-        }
-
-        .gesture-number {
-            font-size: 5em;
-            font-weight: bold;
-            margin: 10px 0;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .gesture-name {
-            font-size: 2em;
-            margin: 10px 0;
-        }
-
-        .confidence-bar {
-            width: 100%;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 15px;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: #4ade80;
-            transition: width 0.3s ease;
-            border-radius: 10px;
-        }
-
-        .help-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .help-card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .gesture-list {
-            list-style: none;
-        }
-
-        .gesture-item {
-            padding: 12px;
-            margin: 8px 0;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            transition: all 0.3s ease;
-        }
-
-        .gesture-item:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
-        }
-
-        .gesture-item strong {
-            color: #667eea;
-            font-size: 1.2em;
-            margin-right: 10px;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-
-        .status-active {
-            background: #4ade80;
-        }
-
-        .status-inactive {
-            background: #ef4444;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .no-detection {
-            opacity: 0.6;
-            font-style: italic;
-        }
-    </style>
+    <title>Hand Gesture Recognition System</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <header>
-            <h1>🤚 手勢數字辨識系統</h1>
+            <h1>[ GESTURE RECOGNITION ]</h1>
             <p>
                 <span class="status-indicator status-active"></span>
-                系統運行中 | NVIDIA Jetson Orin Nano
+                SYSTEM ACTIVE | REAL-TIME DETECTION
             </p>
         </header>
 
+        <!-- Main Content -->
         <div class="main-content">
-            <div class="video-section">
-                <h2 style="color: #667eea; margin-bottom: 15px;">📹 即時攝像頭畫面</h2>
+            <!-- Video Section -->
+            <div class="card video-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 0;">// LIVE CAMERA FEED</h2>
+                    <button id="cameraToggle" class="camera-toggle-btn">
+                        <span class="btn-icon">●</span>
+                        <span class="btn-text">STOP CAMERA</span>
+                    </button>
+                </div>
                 <div class="video-container">
-                    <img id="videoStream" src="{{ url_for('video_feed') }}" alt="視訊串流">
+                    <img id="videoStream" 
+                         src="{{ url_for('video_feed') }}"
+                         data-video-url="{{ url_for('video_feed') }}"
+                         alt="Video Stream">
+                    <div id="cameraOffOverlay" class="camera-off-overlay" style="display: none;">
+                        <div class="camera-off-content">
+                            <div class="camera-off-icon">📷</div>
+                            <div class="camera-off-text">CAMERA OFF</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Info Section -->
             <div class="info-section">
-                <div class="result-card">
-                    <h2>辨識結果</h2>
+                <!-- Result Card -->
+                <div class="card result-card">
+                    <h2>// DETECTION RESULT</h2>
                     <div class="gesture-display">
                         <div class="gesture-number" id="gestureNumber">-</div>
-                        <div class="gesture-name" id="gestureName">等待偵測...</div>
+                        <div class="gesture-name" id="gestureName">WAITING FOR INPUT</div>
                         <div class="confidence-bar">
                             <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="help-card">
-                    <h2>手勢說明</h2>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <h3 style="color: #667eea; margin: 10px 0;">數字 0-9</h3>
-                        <ul class="gesture-list" id="gestureHelp">
-                            <li class="gesture-item"><strong>0</strong> 握拳</li>
-                            <li class="gesture-item"><strong>1</strong> 食指</li>
-                            <li class="gesture-item"><strong>2</strong> 食指+中指</li>
-                            <li class="gesture-item"><strong>3</strong> 食指+中指+無名指</li>
-                            <li class="gesture-item"><strong>4</strong> 食指+中指+無名指+小指</li>
-                            <li class="gesture-item"><strong>5</strong> 全部手指</li>
-                            <li class="gesture-item"><strong>6</strong> 拇指+小指</li>
-                            <li class="gesture-item"><strong>7</strong> 拇指+食指</li>
-                            <li class="gesture-item"><strong>8</strong> 拇指+食指+中指</li>
-                            <li class="gesture-item"><strong>9</strong> 拇指+食指+中指+無名指</li>
-                        </ul>
-                        <h3 style="color: #667eea; margin: 10px 0;">特殊手勢</h3>
+                <!-- Help Card -->
+                <div class="card help-card">
+                    <h2>// GESTURE GUIDE</h2>
+                    <div class="help-content">
+                        <!-- Numbers 0-9 -->
+                        <h3 class="help-section-title">NUMBERS 0-9</h3>
                         <ul class="gesture-list">
-                            <li class="gesture-item"><strong>👍 Like</strong> 只有拇指</li>
-                            <li class="gesture-item"><strong>👌 OK</strong> 中指+無名指+小指</li>
-                            <li class="gesture-item"><strong>🤘 ROCK</strong> 拇指+中指+小指</li>
-                            <li class="gesture-item"><strong>🖕 FUCK</strong> 只有中指</li>
+                            <li class="gesture-item">
+                                <strong>0</strong> Fist (all fingers closed)
+                            </li>
+                            <li class="gesture-item">
+                                <strong>1</strong> Index finger
+                            </li>
+                            <li class="gesture-item">
+                                <strong>2</strong> Index + Middle fingers
+                            </li>
+                            <li class="gesture-item">
+                                <strong>3</strong> Index + Middle + Ring fingers
+                            </li>
+                            <li class="gesture-item">
+                                <strong>4</strong> Index + Middle + Ring + Pinky
+                            </li>
+                            <li class="gesture-item">
+                                <strong>5</strong> All fingers open
+                            </li>
+                            <li class="gesture-item">
+                                <strong>6</strong> Thumb + Pinky
+                            </li>
+                            <li class="gesture-item">
+                                <strong>7</strong> Thumb + Index
+                            </li>
+                            <li class="gesture-item">
+                                <strong>8</strong> Thumb + Index + Middle
+                            </li>
+                            <li class="gesture-item">
+                                <strong>9</strong> Thumb + Index + Middle + Ring
+                            </li>
+                        </ul>
+
+                        <!-- Special Gestures -->
+                        <h3 class="help-section-title">SPECIAL GESTURES</h3>
+                        <ul class="gesture-list">
+                            <li class="gesture-item">
+                                <strong>👍 LIKE</strong> Thumb only
+                            </li>
+                            <li class="gesture-item">
+                                <strong>👌 OK</strong> Middle + Ring + Pinky
+                            </li>
+                            <li class="gesture-item">
+                                <strong>🤘 ROCK</strong> Thumb + Index + Pinky
+                            </li>
+                            <li class="gesture-item">
+                                <strong>🖕 FUCK</strong> Middle finger only
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Footer -->
         <div class="footer">
-            <p>💡 提示：將手放在攝像頭前方，保持手勢穩定約 0.5 秒即可識別</p>
-            <p style="margin-top: 10px; opacity: 0.8;">Powered by MediaPipe & OpenCV</p>
+            <p>PLACE YOUR HAND IN FRONT OF THE CAMERA | HOLD GESTURE FOR 0.5 SECONDS</p>
+            <p>Powered by MediaPipe & OpenCV | NVIDIA Jetson Orin Nano</p>
         </div>
     </div>
 
-    <script>
-        // 每 200ms 更新一次手勢數據
-        setInterval(async () => {
-            try {
-                const response = await fetch('/gesture_data');
-                const data = await response.json();
-                
-                const numberEl = document.getElementById('gestureNumber');
-                const nameEl = document.getElementById('gestureName');
-                const confidenceEl = document.getElementById('confidenceFill');
-                
-                if (data.number >= 0) {
-                    // 根據手勢類型顯示不同內容
-                    if (data.number >= 10) {
-                        // 特殊手勢：顯示對應的表情符號
-                        const specialGestures = {
-                            10: '👍',  // Like
-                            11: '👌',  // OK
-                            12: '🤘',  // ROCK
-                            13: '🖕'   // FUCK
-                        };
-                        numberEl.textContent = specialGestures[data.number] || '?';
-                    } else {
-                        // 數字手勢：顯示數字
-                        numberEl.textContent = data.number;
-                    }
-                    nameEl.textContent = data.name;
-                    nameEl.classList.remove('no-detection');
-                    confidenceEl.style.width = data.confidence + '%';
-                } else {
-                    numberEl.textContent = '?';
-                    nameEl.textContent = data.name;
-                    nameEl.classList.add('no-detection');
-                    confidenceEl.style.width = '0%';
-                }
-            } catch (error) {
-                console.error('獲取手勢數據失敗:', error);
-            }
-        }, 200);
-
-        // 檢測圖像加載錯誤
-        document.getElementById('videoStream').onerror = function() {
-            this.alt = '無法載入視訊串流，請檢查攝像頭連接';
-        };
-    </script>
+    <!-- External JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
-
