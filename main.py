@@ -76,14 +76,14 @@ def main():
             # 如果手勢穩定，則顯示
             if stable_count >= stable_threshold and number != -1:
                 # 繪製結果（使用英文避免顯示問題）
-                if number == 6:
-                    # 讚手勢：顯示 "Like"
-                    display_text = "Like!"
-                    display_text_chinese = f"{gesture_name}"
+                if number >= 10:
+                    # 特殊手勢：直接顯示名稱
+                    display_text = gesture_name
+                    display_text_chinese = gesture_name
                 else:
                     # 數字手勢：顯示數字
                     display_text = f"Number: {number}"
-                    display_text_chinese = f"數字: {number} ({gesture_name})"
+                    display_text_chinese = f"數字: {number}"
                 
                 # 背景框
                 cv2.rectangle(img, (10, 10), (350, 80), (0, 128, 0), -1)
@@ -125,13 +125,18 @@ def main():
             print("\n\n程式退出")
             break
         elif key == ord('h'):  # 幫助
-            print("\n" + "=" * 50)
-            print("手勢數字辨識系統 - 幫助信息")
-            print("=" * 50)
-            for i in range(6):
-                print(f"{i}: {recognizer.get_gesture_description(i)}")
-            print(f"👍 讚: {recognizer.get_gesture_description(6)}")
-            print("=" * 50 + "\n")
+            print("\n" + "=" * 60)
+            print("手勢辨識系統 - 幫助信息")
+            print("=" * 60)
+            print("【數字 0-9】")
+            for i in range(10):
+                print(f"  {i}: {recognizer.get_gesture_description(i)}")
+            print("\n【特殊手勢】")
+            print(f"  👍 Like: {recognizer.get_gesture_description(10)}")
+            print(f"  👌 OK: {recognizer.get_gesture_description(11)}")
+            print(f"  🤘 ROCK: {recognizer.get_gesture_description(12)}")
+            print(f"  🖕 FUCK: {recognizer.get_gesture_description(13)}")
+            print("=" * 60 + "\n")
     
     # 清理資源
     cap.release()

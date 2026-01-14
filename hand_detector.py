@@ -19,6 +19,7 @@ MediaPipe 手部關鍵點編號說明：
 import cv2
 import mediapipe as mp
 import numpy as np
+import math
 
 
 class HandDetector:
@@ -161,13 +162,112 @@ class HandDetector:
                     
         return landmark_list
     
+    def vector_2d_angle(self, v1, v2):
+        """
+        計算兩個二維向量之間的夾角
+        
+        使用向量夾角公式：
+        angle = arccos((v1 · v2) / (|v1| * |v2|))
+        
+        參數:
+            v1: 向量1 (x, y)
+            v2: 向量2 (x, y)
+            
+        返回:
+            angle (float): 角度（度數，0-180度）
+        """
+        v1_x, v1_y = v1[0], v1[1]
+        v2_x, v2_y = v2[0], v2[1]
+        
+        try:
+            # 計算向量點積
+            dot_product = v1_x * v2_x + v1_y * v2_y
+            # 計算向量長度
+            v1_length = math.sqrt(v1_x ** 2 + v1_y ** 2)
+            v2_length = math.sqrt(v2_x ** 2 + v2_y ** 2)
+            # 計算夾角
+            cos_angle = dot_product / (v1_length * v2_length)
+            # 限制在 [-1, 1] 範圍內
+            cos_angle = max(-1, min(1, cos_angle))
+            # 轉換為度數
+            angle = math.degrees(math.acos(cos_angle))
+        except:
+            angle = 180
+        
+        return angle
+    
+    def hand_angle(self, landmark_list):
+        """
+        根據 21 個手部關鍵點，計算每根手指的角度
+        
+        計算方法：
+        - 向量1：從手腕(點0)指向手指的某個關節
+        - 向量2：從關節指向指尖
+        - 計算這兩個向量的夾角
+        
+        參數:
+            landmark_list (list): 手部關鍵點列表 [(id, x, y), ...]
+            
+        返回:
+            angle_list (list): 5 個手指的角度 [大拇指, 食指, 中指, 無名指, 小指]
+        """
+        angle_list = []
+        
+        # 大拇指角度
+        angle = self.vector_2d_angle(
+            (landmark_list[0][1] - landmark_list[2][1], 
+             landmark_list[0][2] - landmark_list[2][2]),
+            (landmark_list[3][1] - landmark_list[4][1], 
+             landmark_list[3][2] - landmark_list[4][2])
+        )
+        angle_list.append(angle)
+        
+        # 食指角度
+        angle = self.vector_2d_angle(
+            (landmark_list[0][1] - landmark_list[6][1], 
+             landmark_list[0][2] - landmark_list[6][2]),
+            (landmark_list[7][1] - landmark_list[8][1], 
+             landmark_list[7][2] - landmark_list[8][2])
+        )
+        angle_list.append(angle)
+        
+        # 中指角度
+        angle = self.vector_2d_angle(
+            (landmark_list[0][1] - landmark_list[10][1], 
+             landmark_list[0][2] - landmark_list[10][2]),
+            (landmark_list[11][1] - landmark_list[12][1], 
+             landmark_list[11][2] - landmark_list[12][2])
+        )
+        angle_list.append(angle)
+        
+        # 無名指角度
+        angle = self.vector_2d_angle(
+            (landmark_list[0][1] - landmark_list[14][1], 
+             landmark_list[0][2] - landmark_list[14][2]),
+            (landmark_list[15][1] - landmark_list[16][1], 
+             landmark_list[15][2] - landmark_list[16][2])
+        )
+        angle_list.append(angle)
+        
+        # 小指角度
+        angle = self.vector_2d_angle(
+            (landmark_list[0][1] - landmark_list[18][1], 
+             landmark_list[0][2] - landmark_list[18][2]),
+            (landmark_list[19][1] - landmark_list[20][1], 
+             landmark_list[19][2] - landmark_list[20][2])
+        )
+        angle_list.append(angle)
+        
+        return angle_list
+    
     def fingers_up(self, landmark_list):
         """
-        判斷每根手指是伸直還是彎曲（改進版）
+        判斷每根手指是伸直還是彎曲（使用向量夾角判斷）
         
-        判斷原理：
-        - 大拇指：比較指尖和根部的水平距離，並區分左右手
-        - 其他手指：比較指尖和關節的垂直位置，使用相對距離判斷
+        判斷原理（參考優化方法）：
+        - 計算從手腕到關節的向量，與關節到指尖的向量之間的夾角
+        - 角度 < 50度：手指伸直（向量接近同向）
+        - 角度 >= 50度：手指彎曲（向量夾角變大）
         
         參數:
             landmark_list (list): 手部關鍵點列表 [(id, x, y), ...]
@@ -176,8 +276,8 @@ class HandDetector:
         返回:
             fingers (list): 5個元素的列表，表示每根手指的狀態
                           格式: [大拇指, 食指, 中指, 無名指, 小指]
-                          1: 手指伸直
-                          0: 手指彎曲
+                          1: 手指伸直（角度 < 50度）
+                          0: 手指彎曲（角度 >= 50度）
                           
         範例:
             [0, 1, 1, 0, 0]  # 表示食指和中指伸直（比出數字 2）
@@ -188,115 +288,19 @@ class HandDetector:
         if len(landmark_list) == 0:
             return []
         
+        # 角度閾值：小於此角度視為伸直，大於等於此角度視為彎曲
+        ANGLE_THRESHOLD = 50  # 度
+        
+        # 計算所有手指的角度
+        finger_angles = self.hand_angle(landmark_list)
+        
+        # 根據角度判斷每根手指是否伸直
         fingers = []
-        
-        # ===== 手指關鍵點 ID 參考 =====
-        # 大拇指: 點 1(根), 2, 3, 4(尖)
-        # 食指:   點 5(根), 6, 7, 8(尖)
-        # 中指:   點 9(根), 10, 11, 12(尖)
-        # 無名指: 點 13(根), 14, 15, 16(尖)
-        # 小指:   點 17(根), 18, 19, 20(尖)
-        
-        # 五根手指的指尖 ID
-        tip_ids = [4, 8, 12, 16, 20]
-        
-        # ===== 判斷大拇指（特殊處理）=====
-        # 大拇指的方向與其他手指不同（橫向而非縱向）
-        # 需要區分左手和右手（左右手大拇指方向相反）
-        
-        # 獲取手腕（點 0）和中指根部（點 9）的 X 座標，用於判斷左右手
-        wrist_x = landmark_list[0][1]
-        middle_finger_base_x = landmark_list[9][1]
-        
-        # 獲取大拇指關鍵點的座標
-        thumb_tip_x = landmark_list[4][1]       # 大拇指尖 X 座標
-        thumb_tip_y = landmark_list[4][2]       # 大拇指尖 Y 座標
-        thumb_ip_x = landmark_list[3][1]        # 大拇指第二關節 X 座標
-        thumb_mcp_x = landmark_list[2][1]       # 大拇指第一關節 X 座標
-        
-        # 判斷是左手還是右手
-        # 如果手腕在中指根部的右側，則是左手；否則是右手
-        is_left_hand = wrist_x > middle_finger_base_x
-        
-        # 計算大拇指的水平伸展距離（使用相對距離）
-        # 計算手掌寬度作為參考
-        palm_width = abs(landmark_list[5][1] - landmark_list[17][1])
-        
-        # 大拇指伸展判斷（改進版）
-        # 方法1：比較指尖和第一關節的水平距離
-        thumb_distance = abs(thumb_tip_x - thumb_mcp_x)
-        
-        # 使用相對閾值（手掌寬度的 15%）而不是固定像素值
-        relative_threshold = max(palm_width * 0.15, 20)  # 最小 20 像素
-        
-        # 方法2：根據左右手判斷大拇指方向
-        if is_left_hand:
-            # 左手：大拇指尖應該在第一關節的左側
-            thumb_extended = (thumb_tip_x < thumb_mcp_x) and (thumb_distance > relative_threshold)
-        else:
-            # 右手：大拇指尖應該在第一關節的右側
-            thumb_extended = (thumb_tip_x > thumb_mcp_x) and (thumb_distance > relative_threshold)
-        
-        # 額外檢查：大拇指尖也應該遠離手掌中心（點 0）
-        thumb_to_wrist_dist = abs(thumb_tip_x - wrist_x)
-        thumb_joint_to_wrist_dist = abs(thumb_mcp_x - wrist_x)
-        
-        # 如果指尖距離手腕更遠，也認為是伸直
-        if thumb_to_wrist_dist > thumb_joint_to_wrist_dist * 1.2:
-            thumb_extended = True
-        
-        fingers.append(1 if thumb_extended else 0)
-        
-        # ===== 判斷其他四根手指（嚴格版 - 檢查所有指節）=====
-        # 對於食指、中指、無名指、小指
-        # 手指關鍵點結構：
-        # - tip_ids[id]: 指尖 (TIP)
-        # - tip_ids[id] - 1: 遠端指間關節 (DIP)  
-        # - tip_ids[id] - 2: 近端指間關節 (PIP)
-        # - tip_ids[id] - 3: 掌指關節根部 (MCP)
-        
-        for id in range(1, 5):
-            # 獲取該手指所有關鍵點的 Y 座標
-            tip_id = tip_ids[id]
-            tip_y = landmark_list[tip_id][2]        # 指尖
-            dip_y = landmark_list[tip_id - 1][2]    # 遠端指間關節（第二關節）
-            pip_y = landmark_list[tip_id - 2][2]    # 近端指間關節（第一關節）
-            mcp_y = landmark_list[tip_id - 3][2]    # 掌指關節（根部）
-            
-            # ===== 嚴格的手指伸直判斷 =====
-            # 要求：所有指節都必須在正確位置，確保整根手指伸直
-            
-            # 條件 1：指尖必須在遠端指間關節(DIP)上方
-            condition1 = tip_y < dip_y
-            
-            # 條件 2：遠端指間關節(DIP)必須在近端指間關節(PIP)上方或接近
-            # 允許一定誤差（5像素），因為完全伸直時這兩個點可能很接近
-            condition2 = dip_y <= pip_y + 5
-            
-            # 條件 3：近端指間關節(PIP)必須在根部(MCP)上方或接近
-            # 這確保手指從根部開始就是伸直的
-            condition3 = pip_y <= mcp_y + 10
-            
-            # 條件 4：指尖必須明顯高於根部（避免手指完全水平或向下）
-            # 使用相對距離判斷
-            condition4 = tip_y < mcp_y - 10  # 至少高於根部 10 像素
-            
-            # 額外檢查：計算手指的總長度，確保手指是伸展的
-            # 如果手指彎曲，即使各個關節位置正確，總長度也會變短
-            total_finger_height = mcp_y - tip_y  # 從根部到指尖的垂直距離
-            
-            # 獲取手指的理論最小長度（根部到第一關節的距離）
-            joint_segment = mcp_y - pip_y
-            
-            # 如果總高度小於單個關節段的長度，說明手指嚴重彎曲
-            condition5 = total_finger_height > joint_segment * 1.5
-            
-            # ===== 最終判斷 =====
-            # 所有條件都必須滿足，才認為手指完全伸直
-            if condition1 and condition2 and condition3 and condition4 and condition5:
-                fingers.append(1)  # 手指完全伸直
+        for angle in finger_angles:
+            if angle < ANGLE_THRESHOLD:
+                fingers.append(1)  # 手指伸直
             else:
-                fingers.append(0)  # 手指彎曲或部分彎曲
-                
+                fingers.append(0)  # 手指彎曲
+        
         return fingers
 

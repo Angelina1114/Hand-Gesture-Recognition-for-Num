@@ -220,9 +220,9 @@ def generate_frames():
                 }
                 
                 # 準備要顯示的文字（使用英文避免顯示問題）
-                if number == 6:
-                    # 讚手勢：顯示 "Like"
-                    display_text = "Like!"
+                if number >= 10:
+                    # 特殊手勢：直接顯示名稱
+                    display_text = gesture_name
                 else:
                     # 數字手勢：顯示數字
                     display_text = f"Number: {number}"
@@ -379,19 +379,28 @@ def gesture_help():
     URL: http://IP地址:5000/gesture_help
     
     返回所有手勢的說明信息（JSON 陣列）
-    
-    返回格式:
-        [
-            {"number": 0, "description": "握拳（所有手指彎曲）"},
-            {"number": 1, "description": "只伸出食指"},
-            ...
-        ]
     """
     help_data = []
-    for i in range(7):  # 0-5 和 6（讚）
+    # 數字 0-9
+    for i in range(10):
         help_data.append({
-            "number": i,
+            "id": i,
+            "type": "number",
             "description": recognizer.get_gesture_description(i)
+        })
+    # 特殊手勢
+    special_gestures = [
+        (10, "Like 👍"),
+        (11, "OK 👌"),
+        (12, "ROCK 🤘"),
+        (13, "FUCK 🖕")
+    ]
+    for gesture_id, name in special_gestures:
+        help_data.append({
+            "id": gesture_id,
+            "type": "special",
+            "name": name,
+            "description": recognizer.get_gesture_description(gesture_id)
         })
     return jsonify(help_data)
 

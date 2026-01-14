@@ -260,29 +260,28 @@
 
                 <div class="help-card">
                     <h2>手勢說明</h2>
-                    <ul class="gesture-list" id="gestureHelp">
-                        <li class="gesture-item">
-                            <strong>0</strong> 握拳（所有手指彎曲）
-                        </li>
-                        <li class="gesture-item">
-                            <strong>1</strong> 只伸出食指
-                        </li>
-                        <li class="gesture-item">
-                            <strong>2</strong> 食指+中指
-                        </li>
-                        <li class="gesture-item">
-                            <strong>3</strong> 食指+中指+無名指 或 中指+無名指+小指
-                        </li>
-                        <li class="gesture-item">
-                            <strong>4</strong> 食指+中指+無名指+小指
-                        </li>
-                        <li class="gesture-item">
-                            <strong>5</strong> 張開手掌（所有手指伸直）
-                        </li>
-                        <li class="gesture-item">
-                            <strong>👍 讚</strong> 只伸出大拇指
-                        </li>
-                    </ul>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <h3 style="color: #667eea; margin: 10px 0;">數字 0-9</h3>
+                        <ul class="gesture-list" id="gestureHelp">
+                            <li class="gesture-item"><strong>0</strong> 握拳</li>
+                            <li class="gesture-item"><strong>1</strong> 食指</li>
+                            <li class="gesture-item"><strong>2</strong> 食指+中指</li>
+                            <li class="gesture-item"><strong>3</strong> 食指+中指+無名指</li>
+                            <li class="gesture-item"><strong>4</strong> 食指+中指+無名指+小指</li>
+                            <li class="gesture-item"><strong>5</strong> 全部手指</li>
+                            <li class="gesture-item"><strong>6</strong> 拇指+小指</li>
+                            <li class="gesture-item"><strong>7</strong> 拇指+食指</li>
+                            <li class="gesture-item"><strong>8</strong> 拇指+食指+中指</li>
+                            <li class="gesture-item"><strong>9</strong> 拇指+食指+中指+無名指</li>
+                        </ul>
+                        <h3 style="color: #667eea; margin: 10px 0;">特殊手勢</h3>
+                        <ul class="gesture-list">
+                            <li class="gesture-item"><strong>👍 Like</strong> 只有拇指</li>
+                            <li class="gesture-item"><strong>👌 OK</strong> 中指+無名指+小指</li>
+                            <li class="gesture-item"><strong>🤘 ROCK</strong> 拇指+中指+小指</li>
+                            <li class="gesture-item"><strong>🖕 FUCK</strong> 只有中指</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -305,10 +304,18 @@
                 const confidenceEl = document.getElementById('confidenceFill');
                 
                 if (data.number >= 0) {
-                    // 如果是讚手勢（數字6），顯示👍而不是數字
-                    if (data.number === 6) {
-                        numberEl.textContent = '👍';
+                    // 根據手勢類型顯示不同內容
+                    if (data.number >= 10) {
+                        // 特殊手勢：顯示對應的表情符號
+                        const specialGestures = {
+                            10: '👍',  // Like
+                            11: '👌',  // OK
+                            12: '🤘',  // ROCK
+                            13: '🖕'   // FUCK
+                        };
+                        numberEl.textContent = specialGestures[data.number] || '?';
                     } else {
+                        // 數字手勢：顯示數字
                         numberEl.textContent = data.number;
                     }
                     nameEl.textContent = data.name;
